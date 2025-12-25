@@ -1,13 +1,6 @@
 # advent of code day 7
 
-def unique(lst):
-    seen = set()
-    unique_list = []
-    for item in lst:  
-        if item not in seen:
-            seen.add(item)
-            unique_list.append(item)
-    return unique_list
+from operator import itemgetter
 
 def parse_input(input_str):
     grid = [line.strip() for line in input_str.strip().splitlines() if line.strip()]
@@ -31,6 +24,27 @@ def print_grid(grid, beams=None):
                 print(ch, end="")
         print("")
     print("---")
+
+def simulate_quantum_beams(grid):
+    rows = len(grid)
+    cols = len(grid[0])
+    start_row, start_col = find_start(grid)
+    paths_counts = {pos: 1 if pos == (start_row, start_col) else 0 
+                    for pos in [(r, c) for r in range(rows) for c in range(cols)]}
+    for r in range(start_row, rows-1):
+        for c in range(cols):
+            if paths_counts[(r,c)] > 0 and grid[r+1][c] == '.':
+                # tachyon beams go down through empty space(.)
+                paths_counts[(r+1, c)] += paths_counts[(r, c)]
+            elif paths_counts[(r,c)] > 0 and grid[r+1][c] == '^':                
+                # otherwise tachyon beams gets split at splitter (^)
+                # add left and right positions to frontier if they are withon bounds and not already present
+                if c-1 >= 0:
+                    paths_counts[(r+1, c-1)] += paths_counts[(r, c)]
+                if c+1 < cols:
+                    paths_counts[(r+1, c+1)] += paths_counts[(r, c)]
+    # sum all paths that reached the bottom row
+    return sum(map(itemgetter(1), filter(lambda x: x[0][0] == rows-1, paths_counts.items())))
 
 def simulate_beam(grid):
     rows = len(grid)
@@ -80,9 +94,9 @@ if __name__ == "__main__":
 
     # part 1
     print("Sample input:")
-    grid = parse_input(sample_input)
-    print_grid(grid)
-    beam_splits = simulate_beam(grid)
+    sample_grid = parse_input(sample_input)
+    print_grid(sample_grid)
+    beam_splits = simulate_beam(sample_grid)
     print("Number of beam splits:", beam_splits)
 
     print("Real input:")
@@ -91,5 +105,12 @@ if __name__ == "__main__":
     print_grid(grid)
     beam_splits = simulate_beam(grid)
     print("Number of beam splits:", beam_splits)
+
+    # # part 2
+    beams_count = simulate_quantum_beams(sample_grid)
+    print("Number of beams in sample:", beams_count)
+    beams_count = simulate_quantum_beams(grid)
+    print("Number of beams in puzzle:", beams_count)
+
 
 
